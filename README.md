@@ -1,0 +1,1 @@
+# HackathonGenAI-WZSolutions
