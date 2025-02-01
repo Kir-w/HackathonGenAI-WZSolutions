@@ -22,3 +22,11 @@ Sorties :
 **Compléments**\
 
 
+
+
+-----
+
+Data exploration
+
+-> conversion des dates en dataframes
+-> résiliation / souscription
