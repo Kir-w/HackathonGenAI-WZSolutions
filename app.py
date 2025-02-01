@@ -1,5 +1,12 @@
 import streamlit as st
 import pandas as pd
+from backend import (
+    list_redshift_tables,
+    get_table_schema,
+    detect_data_anomalies,
+    generate_data_quality_report,
+    explain_sql_query
+)
 
 # 🎨 UI Setup
 st.set_page_config(page_title="Anomaly Detector - Veolia", layout="wide")
