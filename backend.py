@@ -2,168 +2,271 @@ import boto3
 import json
 import time
 import pandas as pd
-from typing import List, Dict, Union
+from typing import List, Dict
 
-# Configuration AWS
+# ---- CONFIGURATION AWS ----
 AWS_REGION = "us-west-2"
-REDSHIFT_WORKGROUP = "wz-solutions-redshift-workgroup"
-REDSHIFT_DATABASE = "dev"
-BEDROCK_MODEL_ID = "amazon.titan-text-express-v1"
+MODEL_ID = "mistral.mixtral-8x7b-instruct-v0:1"
 
-# Initialisation des clients AWS
+# ---- CONFIGURATION REDSHIFT ----
+DATABASE = "dev"
+WORKGROUP_NAME = "wz-solutions-redshift-workgroup"
+
+# ---- INITIALISATION DES CLIENTS ----
 redshift_client = boto3.client('redshift-data', region_name=AWS_REGION)
 bedrock_client = boto3.client('bedrock-runtime', region_name=AWS_REGION)
 
-def execute_redshift_query(sql_query: str) -> pd.DataFrame:
-    """Exécute une requête SQL sur Redshift et retourne les résultats"""
+# ---- FONCTIONS REDSHIFT ----
+def get_redshift_tables():
+    """Récupère la liste des tables disponibles dans la base de données Redshift."""
+    sql_query = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public';"
     try:
         response = redshift_client.execute_statement(
-            Database=REDSHIFT_DATABASE,
-            WorkgroupName=REDSHIFT_WORKGROUP,
+            Database=DATABASE,
+            WorkgroupName=WORKGROUP_NAME,
             Sql=sql_query
         )
-        
+
         statement_id = response['Id']
-        
         while True:
-            status = redshift_client.describe_statement(Id=statement_id)['Status']
-            if status in ['FINISHED', 'FAILED', 'ABORTED']:
+            status_response = redshift_client.describe_statement(Id=statement_id)
+            status = status_response["Status"]
+            if status in ["FINISHED", "FAILED", "ABORTED"]:
                 break
             time.sleep(2)
-            
-        if status == 'FINISHED':
-            result = redshift_client.get_statement_result(Id=statement_id)
-            columns = [col['name'] for col in result['ColumnMetadata']]
-            rows = [[list(field.values())[0] for field in record] for record in result['Records']]
-            return pd.DataFrame(rows, columns=columns)
-            
-        raise Exception(f"Query failed: {status}")
-        
-    except Exception as e:
-        raise RuntimeError(f"Redshift error: {str(e)}")
 
-def analyze_with_bedrock(prompt: str, max_tokens: int = 300) -> str:
-    """Utilise Amazon Bedrock pour analyser les données"""
+        if status == "FINISHED":
+            result_response = redshift_client.get_statement_result(Id=statement_id)
+            tables = [row[0].get('stringValue', 'NULL') for row in result_response.get("Records", [])]
+            return tables if tables else "Aucune table trouvée."
+        else:
+            return f"Erreur lors de l'exécution : {status_response.get('Error', 'Erreur inconnue')}"
+
+    except Exception as e:
+        return f"Erreur de connexion ou d'exécution : {str(e)}"
+    
+
+# ---- FONCTION POUR RÉCUPÉRER LES COLONNES D'UNE TABLE ----
+def get_table_columns(table_name):
+    """Récupère les colonnes et leur description d'une table Redshift."""
+    sql_query = f"""
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_name = '{table_name}';
+    """
     try:
-        request_body = {
-            "inputText": prompt,
-            "textGenerationConfig": {
-                "maxTokenCount": max_tokens,
-                "temperature": 0,
-                "topP": 1,
-                "stopSequences": []
-            }
-        }
-        
+        response = redshift_client.execute_statement(
+            Database=DATABASE,
+            WorkgroupName=WORKGROUP_NAME,
+            Sql=sql_query
+        )
+
+        statement_id = response['Id']
+        while True:
+            status_response = redshift_client.describe_statement(Id=statement_id)
+            status = status_response["Status"]
+            if status in ["FINISHED", "FAILED", "ABORTED"]:
+                break
+            time.sleep(2)
+
+        if status == "FINISHED":
+            result_response = redshift_client.get_statement_result(Id=statement_id)
+            columns = [
+                f"{row[0].get('stringValue', 'NULL')} ({row[1].get('stringValue', 'NULL')})"
+                for row in result_response.get("Records", [])
+            ]
+            return columns if columns else "Aucune colonne trouvée."
+        else:
+            return f"Erreur lors de l'exécution : {status_response.get('Error', 'Erreur inconnue')}"
+
+    except Exception as e:
+        return f"Erreur de connexion ou d'exécution : {str(e)}"
+
+
+# ---- FONCTION POUR ANALYSER LES TABLES AVEC L'AGENT ----
+def agent_analyze_tables():
+    """Analyse et décrit chaque table détectée dans Redshift."""
+    tables = get_redshift_tables()
+    if isinstance(tables, str):
+        return tables
+
+    all_tables_info = []
+    for table in tables:
+        columns = get_table_columns(table)
+        all_tables_info.append(f"Table: {table}\nColonnes: {', '.join(columns)}")
+
+    # Construire le prompt pour Mistral AI
+    prompt = f"""
+    Tu es un expert en bases de données. Analyse et décris chacune des tables trouvées dans Amazon Redshift.
+    
+    Voici les informations trouvées :
+    {chr(10).join(all_tables_info)}
+
+    Pour chaque table :
+    1. Donne son rôle dans la base de données.
+    2. Explique à quoi sert chaque colonne.
+    
+    Réponds de manière simple et concise, chaque description de colonne doit être de la même longueur et la plus courte et complète possible.
+    """
+    print("📢 Prompt envoyé à Mistral :\n", prompt)
+
+    return analyze_with_mistral(prompt)
+
+
+
+# ---- FONCTION POUR INTERAGIR AVEC MISTRAL AI ----
+def analyze_with_mistral(prompt):
+    """Envoie un prompt à Mistral AI via Amazon Bedrock."""
+    request_body = {
+        "prompt": prompt,
+        "max_tokens": 1000,
+        "temperature": 0.3,
+        "top_p": 0.9
+    }
+
+    response = bedrock_client.invoke_model(
+        modelId=MODEL_ID,
+        body=json.dumps(request_body)
+    )
+
+    response_body = json.loads(response["body"].read())
+    return response_body.get("outputs", [{}])[0].get("text", "")
+
+rep_prompt1 = agent_analyze_tables()
+
+# response = agent_analyze_tables()
+# PROMPT 2
+
+def get_table_sample(table_name):
+    """Récupère 1000 lignes d'une table Redshift pour analyse."""
+    sql_query = f"SELECT * FROM {table_name} LIMIT 100;"
+    
+    try:
+        print(f"🔄 Envoi de la requête à Redshift: {sql_query}")
+        response = redshift_client.execute_statement(
+            Database=DATABASE,
+            WorkgroupName=WORKGROUP_NAME,
+            Sql=sql_query
+        )
+
+        statement_id = response['Id']
+        print(f"✅ Requête envoyée, ID: {statement_id}")
+
+        # Timeout après 60 secondes
+        start_time = time.time()
+        while True:
+            status_response = redshift_client.describe_statement(Id=statement_id)
+            status = status_response["Status"]
+
+            if status in ["FINISHED", "FAILED", "ABORTED"]:
+                break
+            
+            # Vérification du timeout (60 secondes max)
+            if time.time() - start_time > 60:
+                print("⏳ Timeout dépassé (60s). Annulation de la requête.")
+                return "Timeout: La requête a pris trop de temps."
+
+            print("⏳ En attente des résultats...")
+            time.sleep(3)  # Vérification toutes les 3 secondes
+
+        if status == "FINISHED":
+            print("✅ Requête terminée, récupération des résultats...")
+            result_response = redshift_client.get_statement_result(Id=statement_id)
+            records = [
+                ", ".join([col.get('stringValue', 'NULL') for col in row])
+                for row in result_response.get("Records", [])
+            ]
+            return records if records else "Aucune donnée trouvée."
+        else:
+            print(f"❌ Erreur d'exécution: {status}")
+            return f"Erreur lors de l'exécution: {status_response.get('Error', 'Erreur inconnue')}"
+
+    except Exception as e:
+        print(f"❌ Erreur de connexion ou d'exécution : {str(e)}")
+        return f"Erreur : {str(e)}"
+
+
+# ---- FONCTION POUR DÉTECTER LES ANOMALIES ----
+def agent_detect_anomalies(table_name):
+    """Détecte les anomalies d'une table spécifique dans Redshift via Mistral AI."""
+    table_sample = get_table_sample(table_name)
+    
+    if isinstance(table_sample, str):
+        return table_sample  # Si erreur, on la renvoie directement
+
+    formatted_sample = "\n".join(table_sample)
+
+    # Construction du prompt
+    prompt = f"""
+    Tu es un expert en qualité des données.
+    {rep_prompt1}
+    
+    Voici un échantillon de la table "{table_name}":
+    {formatted_sample}
+    
+    Identifie les anomalies (valeurs nulles, doublons, erreurs de format, etc.).
+    Génère une requête SQL pour afficher les lignes contenant des données incorrectes.
+
+    Réponds en suivant ce format :
+    - *Type d'anomalie* : [Catégorie de l'anomalie]
+    - *Description* : [Brève explication]
+    - *Requête SQL* : [Requête pour afficher les données erronées]
+    """
+
+    return analyze_with_mistral(prompt)
+
+
+# ---- FONCTION POUR INTERAGIR AVEC MISTRAL AI ----
+def analyze_with_mistral(prompt):
+    """Envoie un prompt à Mistral AI via Amazon Bedrock."""
+    request_body = {
+        "prompt": prompt,
+        "max_tokens": 3000,
+        "temperature": 0.3,
+        "top_p": 0.9
+    }
+
+    try:
+        print("🔄 Envoi du prompt à Mistral AI...")
         response = bedrock_client.invoke_model(
-            modelId=BEDROCK_MODEL_ID,
+            modelId=MODEL_ID,
             body=json.dumps(request_body)
         )
-        
-        response_body = json.loads(response['body'].read())
-        return response_body.get('results', [{}])[0].get('outputText', '')
-        
+        print("✅ Réponse reçue de Mistral.")
+
+        response_body = json.loads(response["body"].read())
+        return response_body.get("outputs", [{}])[0].get("text", "")
+
     except Exception as e:
-        raise RuntimeError(f"Bedrock error: {str(e)}")
+        print(f"❌ Erreur d'interaction avec Mistral AI : {str(e)}")
+        return f"Erreur : {str(e)}"
 
-def get_table_schema(table_name: str) -> Dict:
-    """Récupère le schéma d'une table"""
-    query = f"""
-    SELECT column_name, data_type 
-    FROM information_schema.columns 
-    WHERE table_name = '{table_name}';
-    """
-    result = execute_redshift_query(query)
-    return {
-        "table_name": table_name,
-        "columns": result.set_index('column_name')['data_type'].to_dict()
-    }
+def execute_sql_query(query):
+    """Exécute une requête SQL sur Redshift et retourne les résultats."""
+    try:
+        response = redshift_client.execute_statement(
+            Database=DATABASE,
+            WorkgroupName=WORKGROUP_NAME,
+            Sql=query
+        )
 
-def detect_data_anomalies(table_name: str) -> List[Dict]:
-    """Détecte les anomalies dans une table"""
-    # Analyse avec Bedrock
-    schema = get_table_schema(table_name)
-    sample_data = execute_redshift_query(f"SELECT * FROM {table_name} LIMIT 10;")
-    
-    prompt = f"""
-    Analyse cette structure de table et ces données pour détecter des anomalies:
-    
-    Table: {schema['table_name']}
-    Colonnes: {schema['columns']}
-    
-    Données échantillon:
-    {sample_data.to_markdown()}
-    
-    Génère:
-    1. Une liste d'anomalies potentielles
-    2. Les requêtes SQL pour les identifier
-    3. Des recommandations de correction
-    """
-    
-    analysis = analyze_with_bedrock(prompt)
-    
-    # Formatage des résultats
-    return parse_analysis_results(analysis)
+        statement_id = response['Id']
+        while True:
+            status_response = redshift_client.describe_statement(Id=statement_id)
+            status = status_response["Status"]
+            if status in ["FINISHED", "FAILED", "ABORTED"]:
+                break
+            time.sleep(2)
 
-def parse_analysis_results(raw_analysis: str) -> List[Dict]:
-    """Transforme la sortie texte de Bedrock en structure de données"""
-    # Cette fonction dépend du format de sortie de votre modèle
-    # Exemple d'implémentation basique :
-    anomalies = []
-    current_anomaly = {}
-    
-    for line in raw_analysis.split('\n'):
-        if line.startswith("- Anomalie"):
-            if current_anomaly:
-                anomalies.append(current_anomaly)
-            current_anomaly = {"description": line[2:]}
-        elif line.startswith("  Requête SQL:"):
-            current_anomaly["query"] = line.split(":")[1].strip()
-        elif line.startswith("  Recommandation:"):
-            current_anomaly["recommendation"] = line.split(":")[1].strip()
-    
-    if current_anomaly:
-        anomalies.append(current_anomaly)
-        
-    return anomalies
+        if status == "FINISHED":
+            result_response = redshift_client.get_statement_result(Id=statement_id)
+            rows = [
+                {col['name']: row[i].get('stringValue', 'NULL') for i, col in enumerate(result_response['ColumnMetadata'])}
+                for row in result_response.get("Records", [])
+            ]
+            return pd.DataFrame(rows) if rows else "Aucun résultat trouvé."
+        else:
+            return f"Erreur lors de l'exécution : {status_response.get('Error', 'Erreur inconnue')}"
 
-def generate_data_quality_report(table_name: str) -> Dict:
-    """Génère un rapport complet de qualité des données"""
-    schema = get_table_schema(table_name)
-    anomalies = detect_data_anomalies(table_name)
-    
-    return {
-        "table_name": table_name,
-        "schema": schema,
-        "anomalies": anomalies,
-        "summary": {
-            "total_anomalies": len(anomalies),
-            "critical_issues": sum(1 for a in anomalies if "critique" in a.get("description", "").lower())
-        }
-    }
-
-# Fonctions supplémentaires de l'agent
-def list_redshift_tables() -> List[str]:
-    """Liste toutes les tables disponibles"""
-    query = "SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname = 'public';"
-    result = execute_redshift_query(query)
-    return result['tablename'].tolist()
-
-def get_table_sample(table_name: str, limit: int = 10) -> pd.DataFrame:
-    """Récupère un échantillon de données d'une table"""
-    return execute_redshift_query(f"SELECT * FROM {table_name} LIMIT {limit};")
-
-def explain_sql_query(query: str) -> str:
-    """Explique une requête SQL avec Bedrock"""
-    prompt = f"""
-    Explique cette requête SQL en français simple :
-    
-    {query}
-    
-    Inclus :
-    - Le but de la requête
-    - Les tables impliquées
-    - Les conditions importantes
-    - Les colonnes retournées
-    """
-    return analyze_with_bedrock(prompt)
+    except Exception as e:
+        return f"Erreur de connexion ou d'exécution : {str(e)}"
