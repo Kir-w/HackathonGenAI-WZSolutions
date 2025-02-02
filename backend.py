@@ -5,12 +5,12 @@ import pandas as pd
 from typing import List, Dict
 
 # ---- CONFIGURATION AWS ----
-AWS_REGION = "us-west-2"
-MODEL_ID = "mistral.mixtral-8x7b-instruct-v0:1"
+AWS_REGION = ""
+MODEL_ID = ""
 
 # ---- CONFIGURATION REDSHIFT ----
-DATABASE = "dev"
-WORKGROUP_NAME = "wz-solutions-redshift-workgroup"
+DATABASE = ""
+WORKGROUP_NAME = ""
 
 # ---- INITIALISATION DES CLIENTS ----
 redshift_client = boto3.client('redshift-data', region_name=AWS_REGION)
