@@ -139,8 +139,7 @@ Nous avons su déléguer efficacement les tâches, permettant un avancement en p
 
 
 ### Fichiers Backend & App
-- app.py → Code principal de l’application (probablement un serveur Flask ou une app Streamlit).
-- app copy.py → Copie de app.py, peut-être une version de test.
+- app.py → Code principal de l’application (équivalent de `agent.ipynb` mais dans un fichier `.py`).
 - backend.py → Gestion du backend, interactions avec Redshift et Bedrock.
 
 
