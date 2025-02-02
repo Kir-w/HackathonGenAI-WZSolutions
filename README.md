@@ -32,8 +32,8 @@ Pour cela, il utilise les indicateurs que nous avons définis et notre stratégi
 
 ## Notre projet, étape par étape
 
-Voici une présentation de notre projet. 
-
+Voici une présentation de notre projet : 
+![Architecture](Architecture.png)
 
 ### Étape 1 : fichiers CSV
 *Cette étape et la suivante sont propres à notre projet et ne sont pas pertinentes pour Veolia, qui travaille directement sur une base de données Google Cloud.*
