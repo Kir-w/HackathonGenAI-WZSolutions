@@ -2,7 +2,7 @@
 
 La solution que nous proposons pour le use case de Veolia consiste à identifier des indicateurs clés sur la qualité des données, puis à déployer un système basé sur l'IA générative pour automatiser la détection des données de mauvaise qualité et automatiser l'amélioration de cette qualité.
 
-Équipe : Prosper WANG, Kylie WU, Mark-Killian ZINENBERG, Ilan ZINI
+Équipe : Prosper WANG, Kylie WU, Mark-Killian ZINENBERG, Ilan ZINI\
 Nous sommes étudiants en Master 1 à l'ESILV (Paris). 
 
 
@@ -23,10 +23,10 @@ Entrée : une base de donnée qui contient les tables dont on veut évaluer la q
 Sortie: une liste d'anomalies que nous avons repéré sur les tables, ainsi que les requêtes SQL qui premettent de trouver les données de mauvaises qualité dans nos tables. 
 
 **Compléments**\
-Pour automatiser ce processus décrit plus haut, nous allons créer un agent IA.\ 
-Cet agent est au coeur de notre problème: c'est lui qui va s'appuyer sur un modèle LLM pour répondre à nos besoins.\ 
-Il va d'abord devoir reconnaitre les tables qu'on lui donne en entrée, comprendre leur sens, leur fonctionnalité, leurs colonnes, donc deviner de quel type de données il s'agit à partir du nom des colonnes et du contenu de la base de données pour rester généraliste.\ 
-Une fois cette identification faite, il va devoir parcourir les tables de la base de données et trouver des anomalies dans celles-ci. Il devrait répondre à la question: ces tables contiennent-elles des données de mauvaise qualité, si oui lesquelles et pourquoi ?\ 
+Pour automatiser ce processus décrit plus haut, nous allons créer un agent IA.\
+Cet agent est au coeur de notre problème: c'est lui qui va s'appuyer sur un modèle LLM pour répondre à nos besoins.\
+Il va d'abord devoir reconnaitre les tables qu'on lui donne en entrée, comprendre leur sens, leur fonctionnalité, leurs colonnes, donc deviner de quel type de données il s'agit à partir du nom des colonnes et du contenu de la base de données pour rester généraliste.\
+Une fois cette identification faite, il va devoir parcourir les tables de la base de données et trouver des anomalies dans celles-ci. Il devrait répondre à la question: ces tables contiennent-elles des données de mauvaise qualité, si oui lesquelles et pourquoi ?\
 Pour parvenir à cela, il sera aidé des indicateurs que nous lui donnerons et de la stratégie de prompt engineer que l'on a mis en place. 
 
 
@@ -37,7 +37,7 @@ Pour parvenir à cela, il sera aidé des indicateurs que nous lui donnerons et d
 
 ## Nos difficultés
 
-
+gffgdsxgbdxfb
 
 
 ## Pour aller plus loin 
