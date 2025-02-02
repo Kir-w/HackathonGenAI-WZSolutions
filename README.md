@@ -97,3 +97,9 @@ Nous avons su déléguer efficacement les tâches, permettant un avancement en p
 **Automatisation des analyses** : Utiliser **AWS Lambda** ou **AWS Step Functions** pour exécuter des analyses périodiques et suivre l'évolution de la qualité des données.
 
 **Intégration CI/CD** : Déployer l'agent IA dans un pipeline **CI/CD (Continuous Integration/Continuous Deployment)** pour faciliter les mises à jour et les tests en continu.
+
+
+
+## Note
+
+ou can check out some output examples in the `output` folder. 
