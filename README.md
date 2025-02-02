@@ -68,6 +68,16 @@ L'objectif était de proposer une interface intuitive et user-friendly pour inte
 
 
 
+## Tentative d'Application du Machine Learning
+
+Nous avons également essayé d'appliquer du Machine Learning au problème soumis par Veolia, même si nous savions que cela était hors thème du Hackathon. Nous avons fait cela pour obtenir une vision globale et car nous pensions que c'était intéressant d'explorer cette approche, même si elle n’était pas directement liée au sujet principal.
+
+Nous avons utilisé l'algorithme **Isolation Forest** de Machine Learning pour détecter des anomalies dans les données et proposer des prédictions pertinentes. Bien que nous n'ayons pas intégré cette approche dans notre frontend, nous avons obtenu des résultats intéressants en termes de détection d'anomalies et d’analyse prédictive.
+
+Cependant, à mesure que notre agent IA prenait forme et que nous avancions dans l’implémentation de la solution générative, nous avons choisi de nous recentrer sur l’IA générative, qui correspondait mieux au thème du Hackathon. Nous avons donc mis de côté l'intégration finale du Machine Learning, mais cette approche reste un axe d’amélioration futur intéressant.
+
+
+
 ## Nos difficultés
 
 Nous avons rencontré de nombreuses difficultés lors de la réalisation de ce Hackathon.
@@ -75,7 +85,7 @@ Nous avons rencontré de nombreuses difficultés lors de la réalisation de ce H
 Premièrement, nous avons tenté de créer notre agent et notre knowledge base via la console Amazon Bedrock, comme cela nous avait été conseillé. L'idée était de les configurer depuis la console, puis de les appeler dans notre code principal sur VS Code. Toutefois, bien que nous soyons parvenus à une étape avancée, nous n'avions pas réussi à finaliser l'intégration. Après avoir passé un temps considérable à comprendre le fonctionnement de la console et à résoudre des problèmes techniques (notamment des problèmes de permissions qui ne dépendaient pas de nous), nous avons décidé d'abandonner cette approche au profit d'une intégration directe via VS Code.
 
 Une autre difficulté fut la connexion à Amazon Redshift depuis VS Code. Initialement, nous n'arrivions pas à établir cette connexion, ce qui nous a poussés à développer une solution alternative utilisant Amazon S3 comme source de données pour notre agent IA. Nous avons poussé cette approche assez loin avant qu'un membre de l'équipe ne parvienne finalement à connecter Redshift à notre projet. Cela nous a amenés à abandonner l'approche S3, ce qui, en rétrospective, représente une perte de temps.\
-Vous pouvez tout de même retrouvé cette approche dans la fichier `agent_version_0.ipynb`. 
+Vous pouvez tout de même retrouvé cette approche dans la fichier `agent_version_0.ipynb`.  
 
 Enfin, l'une des difficultés majeures concernait la stratégie de prompt engineering. Nous avons dédié beaucoup de temps à concevoir des prompts efficaces pour optimiser les réponses de notre agent. Cependant, ayant déjà perdu beaucoup de temps sur l'implémentation technique de l'agent, nous avons dû travailler cette partie dans l'urgence, ce qui a ajouté une complexité supplémentaire à notre projet.
 
@@ -120,8 +130,12 @@ Nous avons su déléguer efficacement les tâches, permettant un avancement en p
 
 
 ### Fichiers liés à l’Agent IA
-- agent_version_0.ipynb → Première version du Notebook contenant l'implémentation de l’agent IA (pas utilisée)
+- agent_version_0.ipynb → Première version du Notebook contenant l'implémentation de l’agent IA (pas utilisé)
 - agent.ipynb → Version plus avancée et finale du Notebook de l’agent IA.
+
+
+### Machine Learning
+- machine_learning.ipynb → Test d'implémentation de Machine Learning dans notre projet (pas utilisé)
 
 
 ### Fichiers Backend & App
