@@ -42,7 +42,7 @@ Au début du hackathon, nous avons reçu trois fichiers CSV constituant notre je
 Ces fichiers représentent un échantillon des tables `consommations`, `abonnements` et `factures`.
 
 Notre première étape a consisté à analyser ces fichiers et à convertir les colonnes au bon format : par exemple, transformer les dates stockées en `object` en `datetime`.\
-Nous avons réalisé ce prétraitement des données dans le notebook `redshift.ipynb`, qui documente toutes les étapes de cette transformation. Nous y avons aussi généré de nouveaux fichiers CSV corrigés.
+Nous avons réalisé ce prétraitement des données dans le notebook `data_preparation.ipynb`, qui documente toutes les étapes de cette transformation. Nous y avons aussi généré de nouveaux fichiers CSV corrigés.
 
 
 ### Étape 2 : Redshift
@@ -74,7 +74,8 @@ Nous avons rencontré de nombreuses difficultés lors de la réalisation de ce H
 
 Premièrement, nous avons tenté de créer notre agent et notre knowledge base via la console Amazon Bedrock, comme cela nous avait été conseillé. L'idée était de les configurer depuis la console, puis de les appeler dans notre code principal sur VS Code. Toutefois, bien que nous soyons parvenus à une étape avancée, nous n'avions pas réussi à finaliser l'intégration. Après avoir passé un temps considérable à comprendre le fonctionnement de la console et à résoudre des problèmes techniques (notamment des problèmes de permissions qui ne dépendaient pas de nous), nous avons décidé d'abandonner cette approche au profit d'une intégration directe via VS Code.
 
-Une autre difficulté fut la connexion à Amazon Redshift depuis VS Code. Initialement, nous n'arrivions pas à établir cette connexion, ce qui nous a poussés à développer une solution alternative utilisant Amazon S3 comme source de données pour notre agent IA. Nous avons poussé cette approche assez loin avant qu'un membre de l'équipe ne parvienne finalement à connecter Redshift à notre projet. Cela nous a amenés à abandonner l'approche S3, ce qui, en rétrospective, représente une perte de temps.
+Une autre difficulté fut la connexion à Amazon Redshift depuis VS Code. Initialement, nous n'arrivions pas à établir cette connexion, ce qui nous a poussés à développer une solution alternative utilisant Amazon S3 comme source de données pour notre agent IA. Nous avons poussé cette approche assez loin avant qu'un membre de l'équipe ne parvienne finalement à connecter Redshift à notre projet. Cela nous a amenés à abandonner l'approche S3, ce qui, en rétrospective, représente une perte de temps.\
+Vous pouvez tout de même retrouvé cette approche dans la fichier `agent_version_0.ipynb`. 
 
 Enfin, l'une des difficultés majeures concernait la stratégie de prompt engineering. Nous avons dédié beaucoup de temps à concevoir des prompts efficaces pour optimiser les réponses de notre agent. Cependant, ayant déjà perdu beaucoup de temps sur l'implémentation technique de l'agent, nous avons dû travailler cette partie dans l'urgence, ce qui a ajouté une complexité supplémentaire à notre projet.
 
@@ -100,6 +101,48 @@ Nous avons su déléguer efficacement les tâches, permettant un avancement en p
 
 
 
-## Note
+## Structure du projet
 
-ou can check out some output examples in the `output` folder. 
+
+### Fichiers CSV
+- veolia-data-abonnements.csv → Données brutes des abonnements.
+- veolia-data-consos.csv → Données brutes des consommations.
+- veolia-data-factures.csv → Données brutes des factures.
+
+- abonnement_corrigé.csv → Fichier CSV corrigé après le prétraitement.
+- consommation_corrigé.csv → Données de consommation corrigées.
+- facture_corrigé.csv → Données de facturation corrigées.
+
+
+### Fichiers de Data Processing
+- data_preparation.ipynb → Notebook utilisé pour préparer et transformer les données avant de les charger dans Redshift.
+- Description des features.pdf → Document qui explique les colonnes et données utilisées.
+
+
+### Fichiers liés à l’Agent IA
+- agent_version_0.ipynb → Première version du Notebook contenant l'implémentation de l’agent IA (pas utilisée)
+- agent.ipynb → Version plus avancée et finale du Notebook de l’agent IA.
+
+
+### Fichiers Backend & App
+- app.py → Code principal de l’application (probablement un serveur Flask ou une app Streamlit).
+- app copy.py → Copie de app.py, peut-être une version de test.
+- backend.py → Gestion du backend, interactions avec Redshift et Bedrock.
+
+
+### Dossier `output`
+Contient les résultats générés par l’agent IA.
+
+Voici les fichiers dans ce dossier :
+- output_prompt1.ipynb → Résultat du Prompt 1 (description des tables).
+- output_prompt2.ipynb → Résultat du Prompt 2 (détection des anomalies).
+- output_prompt3.ipynb → Résultat du Prompt 3 (anomalies dans les jointures).
+
+
+### Fichiers de Configuration et Infrastructure
+- requirements.txt → Liste des dépendances Python à installer (pip install -r requirements.txt).
+- IaC.tf → Fichier Terraform qui définit l’infrastructure en tant que code (Infra as Code pour AWS).
+
+
+### Documentation
+- README.md → Fichier de documentation expliquant le projet et son fonctionnement.
