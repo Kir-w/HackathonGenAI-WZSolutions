@@ -4,7 +4,7 @@ psycopg2-binary==2.9.10
 pandas==2.2.3
 sqlalchemy==2.0.37
 
-# Additional dependencies used in the notebook
+# Additional dependencies used in the notebook 'agent.ipynb'
 boto3
 langchain
 faiss-cpu
